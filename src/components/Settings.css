@@ -1,0 +1,60 @@
+.settings-page { padding-bottom: 40px; }
+
+.settings-content {
+  padding: 0 32px;
+  display: flex; flex-direction: column; gap: 20px;
+  max-width: 640px;
+}
+
+.settings-section {
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+.settings-section-header h3 {
+  font-size: 15px; font-weight: 600; margin-bottom: 4px;
+}
+.settings-section-header p { font-size: 13px; color: var(--text-secondary); }
+
+.user-connected {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg-surface); border: 1px solid rgba(63,185,80,0.3);
+  border-radius: var(--radius); padding: 12px;
+}
+.settings-avatar { width: 40px; height: 40px; border-radius: 50%; }
+.settings-user-name { font-weight: 600; font-size: 14px; }
+.settings-user-handle { font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); }
+.connected-badge {
+  margin-left: auto; background: rgba(63,185,80,0.12);
+  color: var(--accent-green); border: 1px solid rgba(63,185,80,0.25);
+  border-radius: 12px; padding: 3px 10px; font-size: 12px; font-weight: 600;
+}
+
+.token-input-row { display: flex; gap: 8px; }
+.token-input-row input { flex: 1; font-family: var(--font-mono); }
+
+.helper-text { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
+.helper-text a { color: var(--accent-blue); text-decoration: none; }
+.helper-text a:hover { text-decoration: underline; }
+.helper-text code {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 4px; padding: 1px 5px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);
+}
+
+.error-banner {
+  background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3);
+  border-radius: var(--radius); padding: 10px 12px;
+  color: var(--accent-red); font-size: 13px;
+}
+
+.settings-actions { display: flex; gap: 8px; }
+
+.about-list { display: flex; flex-direction: column; gap: 0; }
+.about-row {
+  display: flex; justify-content: space-between;
+  padding: 10px 0; font-size: 13px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.about-row:last-child { border-bottom: none; }
+.about-val { color: var(--text-primary); font-family: var(--font-mono); font-size: 12px; }
