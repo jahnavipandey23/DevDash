@@ -100,3 +100,11 @@
   transition: color var(--transition);
 }
 .sidebar-user:hover .user-logout-icon { color: var(--text-secondary); }
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 16px;
+}
+
+.sidebar-bottom .btn {
+  width: 100%;
+}

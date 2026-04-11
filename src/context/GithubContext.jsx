@@ -3,78 +3,138 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 const GithubContext = createContext(null);
 
 export function GithubProvider({ children }) {
+
+  // ================= STATE =================
   const [token, setToken] = useState(() => localStorage.getItem("gh_token") || "");
-  const [user, setUser] = useState(null);
-  const [repos, setRepos] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [kanbanProjects, setKanbanProjects] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("kanban_projects") || "[]"); } catch { return []; }
+
+  const [appUser, setAppUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("app_user")) || null;
+    } catch {
+      return null;
+    }
   });
 
-  const headers = token ? { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" } : { Accept: "application/vnd.github+json" };
+  const [githubUser, setGithubUser] = useState(null);
+  const [repos, setRepos] = useState([]);
+  const [kanbanProjects, setKanbanProjects] = useState([]);
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // ================= HEADERS =================
+  const headers = token
+    ? {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+      }
+    : { Accept: "application/vnd.github+json" };
+
+  // ================= FETCH USER =================
   const fetchUser = useCallback(async () => {
     if (!token) return;
+
     try {
       const res = await fetch("https://api.github.com/user", { headers });
+
       if (!res.ok) throw new Error("Invalid token");
+
       const data = await res.json();
-      setUser(data);
+
+      setGithubUser(data);
       setError("");
-    } catch (e) { setError(e.message); setUser(null); }
+
+      // 🔥 Load user-specific Kanban data
+      const storedProjects = localStorage.getItem(`kanban_${data.login}`);
+      if (storedProjects) {
+        setKanbanProjects(JSON.parse(storedProjects));
+      } else {
+        setKanbanProjects([]);
+      }
+
+    } catch (e) {
+      setGithubUser(null);
+      setError(e.message);
+    }
   }, [token]);
 
-const fetchRepos = useCallback(async () => {
-if (!token) {
-  setRepos([]);
-  setKanbanProjects([]);
-  localStorage.removeItem("kanban_projects"); 
-  setError("NO_TOKEN");
-  return;
-}
+  // ================= FETCH REPOS =================
+  const fetchRepos = useCallback(async () => {
+    if (!token) {
+      setRepos([]);
+      return;
+    }
 
-  setLoading(true);
-  try {
-    const res = await fetch(
-      "https://api.github.com/user/repos?sort=updated&per_page=50&affiliation=owner,collaborator",
-      { headers }
-    );
+    setLoading(true);
 
-    if (!res.ok) throw new Error("Failed to fetch repos");
+    try {
+      const res = await fetch(
+        "https://api.github.com/user/repos?sort=updated&per_page=50",
+        { headers }
+      );
 
-    const data = await res.json();
-    setRepos(data);
-    setError("");
+      if (!res.ok) throw new Error("Failed to fetch repos");
 
-  } catch (e) {
-    setError(e.message);
-  }
-  setLoading(false);
-}, [token]);
+      const data = await res.json();
 
+      setRepos(data);
+      setError("");
+
+    } catch (e) {
+      setError(e.message);
+    }
+
+    setLoading(false);
+  }, [token]);
+
+  // ================= SAVE TOKEN =================
   const saveToken = (t) => {
     setToken(t);
     localStorage.setItem("gh_token", t);
   };
 
+  // ================= DISCONNECT =================
   const clearToken = () => {
-    setToken(""); setUser(null);
+    setToken("");
+    setGithubUser(null);
+    setRepos([]);
+    setKanbanProjects([]); // UI reset only
+
     localStorage.removeItem("gh_token");
+
+    // ❗ DO NOT remove kanban_<user>
   };
 
-  const updateKanbanProject = (id, updates) => {
-    setKanbanProjects(prev => {
-      const next = prev.map(p => p.id === id ? { ...p, ...updates } : p);
-      localStorage.setItem("kanban_projects", JSON.stringify(next));
-      return next;
-    });
+  // ================= KANBAN =================
+  const persistKanban = (data) => {
+    if (githubUser?.login) {
+      localStorage.setItem(`kanban_${githubUser.login}`, JSON.stringify(data));
+    }
   };
 
   const addKanbanProject = (project) => {
     setKanbanProjects(prev => {
-      const next = [...prev, { ...project, id: Date.now() }];
-      localStorage.setItem("kanban_projects", JSON.stringify(next));
+      const next = [
+        ...prev,
+        {
+          ...project,
+          id: Date.now(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      persistKanban(next);
+      return next;
+    });
+  };
+
+  const updateKanbanProject = (id, updates) => {
+    setKanbanProjects(prev => {
+      const next = prev.map(p =>
+        p.id === id ? { ...p, ...updates } : p
+      );
+
+      persistKanban(next);
       return next;
     });
   };
@@ -82,14 +142,31 @@ if (!token) {
   const removeKanbanProject = (id) => {
     setKanbanProjects(prev => {
       const next = prev.filter(p => p.id !== id);
-      localStorage.setItem("kanban_projects", JSON.stringify(next));
+
+      persistKanban(next);
       return next;
     });
   };
 
-  useEffect(() => { fetchUser(); }, [fetchUser]);
-  useEffect(() => { fetchRepos(); }, [fetchRepos]);
+  // ================= EFFECTS =================
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
 
+  useEffect(() => {
+    fetchRepos();
+  }, [fetchRepos]);
+
+  // ================= APP USER PERSIST =================
+  useEffect(() => {
+    if (appUser) {
+      localStorage.setItem("app_user", JSON.stringify(appUser));
+    } else {
+      localStorage.removeItem("app_user");
+    }
+  }, [appUser]);
+
+  // ================= STATS =================
   const stats = {
     total: kanbanProjects.length,
     active: kanbanProjects.filter(p => p.status === "in-progress").length,
@@ -97,13 +174,27 @@ if (!token) {
     highPriority: kanbanProjects.filter(p => p.priority === "high").length,
   };
 
+  // ================= PROVIDER =================
   return (
-    <GithubContext.Provider value={{
-      token, user,setUser, repos, loading, error,
-      kanbanProjects, stats,
-      saveToken, clearToken, fetchRepos,
-      updateKanbanProject, addKanbanProject, removeKanbanProject,
-    }}>
+    <GithubContext.Provider
+      value={{
+        token,
+        appUser,
+        setAppUser,
+        githubUser,
+        repos,
+        loading,
+        error,
+        kanbanProjects,
+        stats,
+        saveToken,
+        clearToken,
+        fetchRepos,
+        addKanbanProject,
+        updateKanbanProject,
+        removeKanbanProject,
+      }}
+    >
       {children}
     </GithubContext.Provider>
   );
