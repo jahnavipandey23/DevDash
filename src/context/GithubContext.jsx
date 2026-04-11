@@ -3,7 +3,6 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 const GithubContext = createContext(null);
 
 export function GithubProvider({ children }) {
-
   // ================= STATE =================
   const [token, setToken] = useState(() => localStorage.getItem("gh_token") || "");
 
@@ -14,14 +13,12 @@ export function GithubProvider({ children }) {
       return null;
     }
   });
-
   const [githubUser, setGithubUser] = useState(null);
   const [repos, setRepos] = useState([]);
   const [kanbanProjects, setKanbanProjects] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   // ================= HEADERS =================
   const headers = token
     ? {
@@ -29,7 +26,6 @@ export function GithubProvider({ children }) {
         Accept: "application/vnd.github+json",
       }
     : { Accept: "application/vnd.github+json" };
-
   // ================= FETCH USER =================
   const fetchUser = useCallback(async () => {
     if (!token) return;
@@ -44,7 +40,6 @@ export function GithubProvider({ children }) {
       setGithubUser(data);
       setError("");
 
-      // 🔥 Load user-specific Kanban data
       const storedProjects = localStorage.getItem(`kanban_${data.login}`);
       if (storedProjects) {
         setKanbanProjects(JSON.parse(storedProjects));
@@ -57,14 +52,12 @@ export function GithubProvider({ children }) {
       setError(e.message);
     }
   }, [token]);
-
   // ================= FETCH REPOS =================
   const fetchRepos = useCallback(async () => {
     if (!token) {
       setRepos([]);
       return;
     }
-
     setLoading(true);
 
     try {
@@ -86,13 +79,11 @@ export function GithubProvider({ children }) {
 
     setLoading(false);
   }, [token]);
-
   // ================= SAVE TOKEN =================
   const saveToken = (t) => {
     setToken(t);
     localStorage.setItem("gh_token", t);
   };
-
   // ================= DISCONNECT =================
   const clearToken = () => {
     setToken("");
@@ -101,17 +92,13 @@ export function GithubProvider({ children }) {
     setKanbanProjects([]); // UI reset only
 
     localStorage.removeItem("gh_token");
-
-    // ❗ DO NOT remove kanban_<user>
   };
-
   // ================= KANBAN =================
   const persistKanban = (data) => {
     if (githubUser?.login) {
       localStorage.setItem(`kanban_${githubUser.login}`, JSON.stringify(data));
     }
   };
-
   const addKanbanProject = (project) => {
     setKanbanProjects(prev => {
       const next = [
@@ -122,23 +109,19 @@ export function GithubProvider({ children }) {
           updatedAt: new Date().toISOString(),
         },
       ];
-
       persistKanban(next);
       return next;
     });
   };
-
   const updateKanbanProject = (id, updates) => {
     setKanbanProjects(prev => {
       const next = prev.map(p =>
         p.id === id ? { ...p, ...updates } : p
       );
-
       persistKanban(next);
       return next;
     });
   };
-
   const removeKanbanProject = (id) => {
     setKanbanProjects(prev => {
       const next = prev.filter(p => p.id !== id);
@@ -147,16 +130,13 @@ export function GithubProvider({ children }) {
       return next;
     });
   };
-
   // ================= EFFECTS =================
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
-
   useEffect(() => {
     fetchRepos();
   }, [fetchRepos]);
-
   // ================= APP USER PERSIST =================
   useEffect(() => {
     if (appUser) {
@@ -165,7 +145,6 @@ export function GithubProvider({ children }) {
       localStorage.removeItem("app_user");
     }
   }, [appUser]);
-
   // ================= STATS =================
   const stats = {
     total: kanbanProjects.length,
@@ -173,7 +152,6 @@ export function GithubProvider({ children }) {
     completed: kanbanProjects.filter(p => p.status === "done").length,
     highPriority: kanbanProjects.filter(p => p.priority === "high").length,
   };
-
   // ================= PROVIDER =================
   return (
     <GithubContext.Provider
@@ -199,5 +177,4 @@ export function GithubProvider({ children }) {
     </GithubContext.Provider>
   );
 }
-
 export const useGithub = () => useContext(GithubContext);
