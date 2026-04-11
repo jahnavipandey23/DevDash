@@ -28,7 +28,6 @@ export default function Sidebar({ activePage, setActivePage }) {
           </button>
         ))}
       </nav>
-      <button className="sidebar-collapse">‹</button>
       <div className="sidebar-user">
         {user?.avatar_url
           ? <img src={user.avatar_url} alt={user.login} className="user-avatar" />
