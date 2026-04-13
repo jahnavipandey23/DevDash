@@ -16,12 +16,12 @@ function Settings() {
   const [showToken, setShowToken]   = useState(false);
   const [saved, setSaved]           = useState(false);
 
-  // ✅ Sync token with input (IMPORTANT FIX)
+  //  Sync token with input (IMPORTANT FIX)
   useEffect(() => {
     setTokenInput(token || "");
   }, [token]);
 
-  // ✅ Save & connect GitHub
+  //  Save & connect GitHub
   const handleSave = async () => {
     if (!tokenInput.trim()) return;
 
@@ -32,7 +32,7 @@ function Settings() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  // ✅ Disconnect ONLY GitHub (no logout)
+  //  Disconnect ONLY GitHub (no logout)
   const handleDisconnect = () => {
     clearToken();
     setTokenInput("");
@@ -53,11 +53,10 @@ function Settings() {
             <h3>GitHub Integration</h3>
             <p>
               Connect your GitHub account to fetch repositories and track projects.
-              Disconnecting will NOT log you out of DevBoard.
             </p>
           </div>
 
-          {/* ✅ CONNECTED USER */}
+          {/*  CONNECTED USER */}
           {githubUser && (
             <div className="user-connected">
               <img

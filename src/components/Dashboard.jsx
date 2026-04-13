@@ -17,18 +17,18 @@ const LANG_COLORS = {
 export default function Dashboard({ setActivePage }) {
   const { appUser, githubUser, kanbanProjects = [], stats = {}, loading } = useGithub();
 
-  // ✅ Safe counts
+  // Safe counts
   const high   = kanbanProjects.filter(p => p.priority === "high").length;
   const medium = kanbanProjects.filter(p => p.priority === "medium").length;
   const low    = kanbanProjects.filter(p => p.priority === "low").length;
   const maxBar = Math.max(high, medium, low, 1);
 
-  // ✅ Recent projects
+  // Recent projects
   const recent = [...kanbanProjects]
     .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
     .slice(0, 5);
 
-  // ✅ Safe stats
+  // Safe stats
   const statCards = [
     { label: "Total Projects", value: stats?.total || 0,        icon: "⬡", color: "blue"  },
     { label: "Active",         value: stats?.active || 0,       icon: "◎", color: "green" },
@@ -44,15 +44,34 @@ export default function Dashboard({ setActivePage }) {
         <h1>
           Welcome back, {appUser?.name || "Developer"} 👋
         </h1>
-        <p>Here's an overview of your projects.</p>
+        <p>Overview of your active projects and your progress.</p>
 
         {/* GitHub not connected */}
         {!githubUser && (
-          <div className="no-token">
-            <h2>🔑 Connect GitHub</h2>
-            <p>Go to Settings and add your token.</p>
-          </div>
-        )}
+  <div className="github-hero-alert">
+    <div className="github-glow-ring"></div>
+
+    <div className="github-alert-content">
+      <div className="github-icon-wrap">
+        <div className="github-floating-icon">🔗</div>
+      </div>
+
+      <div className="github-alert-text">
+        <h2>Connect GitHub & Unlock Insights</h2>
+        <p>
+          Sync your repositories, track repos, and unlock live project analytics.
+        </p>
+      </div>
+
+      <button
+        className="github-connect-btn"
+        onClick={() => setActivePage("settings")}
+      >
+        Connect Now →
+      </button>
+    </div>
+  </div>
+)}
       </div>
 
       {/* ================= STATS ================= */}
@@ -84,13 +103,7 @@ export default function Dashboard({ setActivePage }) {
               <div key={bar.label} className="bar-group">
 
                 <div className="bar-track">
-                  <div className="bar-y-labels">
-                    {[8, 6, 4, 2, 0].map(n => (
-                      <span key={n} className="bar-y-label">{n}</span>
-                    ))}
-                  </div>
-
-                  <div className="bar-fill-wrapper">
+  <div className="bar-fill-wrapper">
                     <div
                       className="bar-fill"
                       style={{
@@ -140,7 +153,6 @@ export default function Dashboard({ setActivePage }) {
                 <th>Language</th>
                 <th>Priority</th>
                 <th>Status</th>
-                <th>Updated</th>
               </tr>
             </thead>
 
@@ -182,11 +194,6 @@ export default function Dashboard({ setActivePage }) {
                     </span>
                   </td>
 
-                  <td className="text-muted">
-                    {p.updatedAt
-                      ? new Date(p.updatedAt).toLocaleDateString()
-                      : "—"}
-                  </td>
                 </tr>
               ))}
             </tbody>
