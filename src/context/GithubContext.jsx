@@ -99,8 +99,17 @@ export function GithubProvider({ children }) {
       localStorage.setItem(`kanban_${githubUser.login}`, JSON.stringify(data));
     }
   };
+
   const addKanbanProject = (project) => {
     setKanbanProjects(prev => {
+      // Block duplicates by repo id (GitHub's numeric id) or by name (case-insensitive)
+      const isDuplicate = prev.some(
+        p =>
+          (project.repoId && p.repoId === project.repoId) ||
+          p.name?.toLowerCase() === project.name?.toLowerCase()
+      );
+      if (isDuplicate) return prev; // return unchanged state — no re-render needed
+
       const next = [
         ...prev,
         {
@@ -113,6 +122,7 @@ export function GithubProvider({ children }) {
       return next;
     });
   };
+
   const updateKanbanProject = (id, updates) => {
     setKanbanProjects(prev => {
       const next = prev.map(p =>
@@ -122,10 +132,10 @@ export function GithubProvider({ children }) {
       return next;
     });
   };
+
   const removeKanbanProject = (id) => {
     setKanbanProjects(prev => {
       const next = prev.filter(p => p.id !== id);
-
       persistKanban(next);
       return next;
     });

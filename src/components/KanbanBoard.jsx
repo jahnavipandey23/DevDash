@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useGithub } from "../context/GithubContext";
 import "./KanbanBoard.css";
 
@@ -23,9 +23,24 @@ export default function KanbanBoard() {
   const [filter, setFilter] = useState("all");
   const dragNode = useRef(null);
 
-  const getByCol = (col) => kanbanProjects.filter(p =>
-    p.status === col && (filter === "all" || p.priority === filter)
-  );
+  // Deduplicate by id first, then by name as a fallback
+  const uniqueProjects = useMemo(() => {
+    const seenIds = new Set();
+    const seenNames = new Set();
+    return kanbanProjects.filter((p) => {
+      const dupId   = seenIds.has(p.id);
+      const dupName = seenNames.has(p.name?.toLowerCase());
+      if (dupId || dupName) return false;
+      seenIds.add(p.id);
+      seenNames.add(p.name?.toLowerCase());
+      return true;
+    });
+  }, [kanbanProjects]);
+
+  const getByCol = (col) =>
+    uniqueProjects.filter(
+      (p) => p.status === col && (filter === "all" || p.priority === filter)
+    );
 
   const handleDragStart = (e, card) => {
     setDragCard(card);
@@ -96,13 +111,19 @@ export default function KanbanBoard() {
         })}
       </div>
 
-      {editCard && <EditCardModal card={editCard} onSave={updates=>{updateKanbanProject(editCard.id,updates); setEditCard(null);}} onClose={()=>setEditCard(null)}/>}
+      {editCard && (
+        <EditCardModal
+          card={editCard}
+          onSave={updates => { updateKanbanProject(editCard.id, updates); setEditCard(null); }}
+          onClose={() => setEditCard(null)}
+        />
+      )}
     </div>
   );
 }
 
 function KanbanCard({ card, onDragStart, onDragEnd, onEdit, onRemove }) {
-  const [menuOpen,setMenuOpen]=useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div className="kanban-card" draggable onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className="card-header">
@@ -117,9 +138,13 @@ function KanbanCard({ card, onDragStart, onDragEnd, onEdit, onRemove }) {
           )}
         </div>
       </div>
-      {card.description && <p className="card-desc">{card.description.slice(0,80)}{card.description.length>80?"…":""}</p>}
+      {card.description && (
+        <p className="card-desc">
+          {card.description.slice(0, 80)}{card.description.length > 80 ? "…" : ""}
+        </p>
+      )}
       <div className="card-footer">
-        <div className="card-meta">{card.stars>0 && <span className="card-stat">⭐{card.stars}</span>}</div>
+        <div className="card-meta">{card.stars > 0 && <span className="card-stat">⭐{card.stars}</span>}</div>
         <span className={`tag tag-${card.priority}`}>{card.priority}</span>
       </div>
     </div>
@@ -127,9 +152,9 @@ function KanbanCard({ card, onDragStart, onDragEnd, onEdit, onRemove }) {
 }
 
 function EditCardModal({ card, onSave, onClose }) {
-  const [priority,setPriority]=useState(card.priority);
-  const [status,setStatus]=useState(card.status);
-  const [description,setDescription]=useState(card.description);
+  const [priority,    setPriority]    = useState(card.priority);
+  const [status,      setStatus]      = useState(card.status);
+  const [description, setDescription] = useState(card.description);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -156,13 +181,15 @@ function EditCardModal({ card, onSave, onClose }) {
                 className={`priority-btn ${priority===p?"selected":""} priority-${p}`}
                 onClick={()=>setPriority(p)}
                 style={{
-                  flex:1,padding:"7px",
-                  border:`1px solid ${priority===p?PRIORITY_STYLE[p].color:"var(--border)"}`,
+                  flex:1, padding:"7px",
+                  border:`1px solid ${priority===p ? PRIORITY_STYLE[p].color : "var(--border)"}`,
                   borderRadius:"var(--radius)",
-                  background:priority===p?PRIORITY_STYLE[p].bg:"var(--bg-surface)",
-                  color:priority===p?PRIORITY_STYLE[p].color:"var(--text-secondary)",
-                  cursor:"pointer",fontFamily:"var(--font-sans)",fontSize:13,transition:"all 0.2s"
-                }}>{p[0].toUpperCase()+p.slice(1)}</button>
+                  background:priority===p ? PRIORITY_STYLE[p].bg : "var(--bg-surface)",
+                  color:priority===p ? PRIORITY_STYLE[p].color : "var(--text-secondary)",
+                  cursor:"pointer", fontFamily:"var(--font-sans)", fontSize:13, transition:"all 0.2s"
+                }}>
+                {p[0].toUpperCase()+p.slice(1)}
+              </button>
             ))}
           </div>
         </div>
